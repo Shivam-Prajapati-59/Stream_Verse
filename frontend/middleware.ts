@@ -1,11 +1,18 @@
-import { createThirdwebClient } from "thirdweb";
-import { facilitator, settlePayment } from "thirdweb/x402";
-import { arbitrumSepolia } from "thirdweb/chains";
+// src/middleware.ts
 
-const client = createThirdwebClient({ secretKey: "your-secret-key" });
+import { facilitator, settlePayment } from "thirdweb/x402";
+import { createThirdwebClient } from "thirdweb";
+import { arbitrumSepolia, polygonAmoy } from "thirdweb/chains";
+import { NextRequest, NextResponse } from "next/server";
+
+const serverWalletAddress = process.env.SERVER_WALLET_ADDRESS;
+
+const secretKeyThird = process.env.THIRDWEB_SECRET_KEY!;
+
+const client = createThirdwebClient({ secretKey: secretKeyThird });
 const thirdwebX402Facilitator = facilitator({
   client,
-  serverWalletAddress: "0xYourWalletAddress",
+  serverWalletAddress: serverWalletAddress as `0x{string}`,
 });
 
 export async function middleware(request: NextRequest) {
@@ -17,23 +24,14 @@ export async function middleware(request: NextRequest) {
     resourceUrl,
     method,
     paymentData,
-    payTo: "0xYourWalletAddress",
-    network: arbitrumSepolia, // or any other chain
+    payTo: process.env.SERVER_WALLET_ADDRESS as `0x${string}`,
+    network: polygonAmoy, // or any other chain
     price: "$0.01", // can also be a ERC20 token amount
-    routeConfig: {
-      description: "Access to paid content",
-    },
     facilitator: thirdwebX402Facilitator,
   });
 
   if (result.status === 200) {
-    // payment successful, execute the request
-    const response = NextResponse.next();
-    // optionally set the response headers back to the client
-    for (const [key, value] of Object.entries(result.responseHeaders)) {
-      response.headers.set(key, value);
-    }
-    return response;
+    return NextResponse.next();
   }
 
   // otherwise, request payment
