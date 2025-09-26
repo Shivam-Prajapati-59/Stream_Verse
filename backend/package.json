@@ -4,24 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only --ignore-watch node_modules --no-notify src/index.ts",
-    "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js",
-    "lint": "eslint --ext .ts src"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "dotenv": "^17.2.2",
-    "express": "^5.1.0",
-    "x402-express": "^0.6.5"
-  },
-  "devDependencies": {
     "@types/express": "^5.0.3",
-    "@types/node": "^24.5.2",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^5.9.2"
+    "express": "^5.1.0",
+    "process": "^0.11.10",
+    "x402-express": "^0.6.5"
   }
 }

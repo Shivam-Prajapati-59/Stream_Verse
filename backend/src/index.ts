@@ -1,37 +1,39 @@
 import express from "express";
-import dotenv from "dotenv";
-import { paymentMiddleware, Network } from "x402-express";
-
-dotenv.config();
+import { paymentMiddleware } from "x402-express";
 
 const app = express();
-app.use(express.json());
-
-// Configure the payment middleware
 
 app.use(
   paymentMiddleware(
-    "0xYourAddress", // 👈 replace with your Polygon Amoy wallet address
+    process.env.PAYMENT_ADDRESS as `0x${string}`, // your receiving wallet address
     {
-      "/protected-route": {
-        price: "$0.10",
-        network: "polygon-amoy", // 👈 Polygon Amoy testnet
+      "GET /weather": {
+        price: "$0.001", // USDC amount in dollars
+        network: "polygon-amoy",
         config: {
-          description: "Access to premium content on Polygon Amoy",
+          description: "Get current weather data",
+          inputSchema: {
+            type: "object",
+            properties: {
+              location: { type: "string" },
+            },
+          },
         },
       },
     },
-
     {
-      url: "https://facilitator.x402.rs", // 👈 Facilitator URL
+      url: process.env.FACILITATOR_URL || "https://x402.polygon.technology",
     }
   )
 );
 
-// health check
-app.get("/health", (_req, res) => res.status(200).json({ status: "ok" }));
+app.get("/weather", (req, res) => {
+  res.json({
+    weather: "sunny",
+    temperature: 70,
+  });
+});
 
-const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server listening on http://localhost:${PORT}`);
+app.listen(4021, () => {
+  console.log(`Seller running on http://localhost:4021`);
 });
