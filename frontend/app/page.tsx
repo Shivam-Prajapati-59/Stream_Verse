@@ -1,11 +1,13 @@
-import React from "react";
+import { Button } from "@/components/ui/button";
 
-const Home = () => {
+export default function Home() {
   return (
-    <div>
-      <h1>Home</h1>
+    <div className="p-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-bold">Hello from Stream Verse</h1>
+      </div>
+      <Button>Hello</Button>
+      {/* <VideoPlayer /> */}
     </div>
   );
-};
-
-export default Home;
+}
