@@ -5,6 +5,7 @@ import Navbar from "@/components/custom/Navbar";
 import { Toaster } from "@/components/ui/sonner";
 import "@rainbow-me/rainbowkit/styles.css";
 import { Providers } from "@/providers/providers";
+import { SynapseErrorBoundary } from "@/components/custom/SynapseErrorBoundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,9 +33,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <Navbar />
-          {children}
-          <Toaster />
+          <SynapseErrorBoundary>
+            <Navbar />
+            {children}
+            <Toaster />
+          </SynapseErrorBoundary>
         </Providers>
       </body>
     </html>

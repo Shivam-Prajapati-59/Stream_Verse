@@ -29,3 +29,8 @@ export const THIRDWEB_CONFIG = {
   SECRET_KEY: process.env.THIRDWEB_SECRET_KEY,
   SERVER_WALLET: process.env.SERVER_WALLET_ADDRESS,
 } as const;
+
+export const VIDEO_CONFIG = {
+  DEFAULT_PRICE: "$0.01",
+  DEFAULT_CURRENCY: "USDC",
+} as const;

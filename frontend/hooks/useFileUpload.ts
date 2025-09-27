@@ -2,7 +2,6 @@ import { useState, useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useConfetti } from "@/hooks/useConfetti";
 import { useAccount } from "wagmi";
-import { preflightCheck } from "@/utils/fileuploadchecks";
 import { useSynapse } from "@/providers/synapseprovider";
 
 export type UploadedInfo = {
@@ -13,23 +12,23 @@ export type UploadedInfo = {
   pieceId?: number;
   dataSetId?: number;
   providerAddress?: string;
+  videoId?: number; // Database ID after server storage
 };
 
 export type UploadStage =
   | "initializing"
   | "preflight"
   | "context_setup"
-  | "provider_selection"
-  | "dataset_creation"
   | "uploading"
   | "piece_addition"
   | "confirmation"
+  | "server_storage"
   | "completed"
   | "error";
 
 /**
- * Hook to upload a file to the Filecoin network using Synapse SDK.
- * Provides detailed progress tracking and comprehensive error handling.
+ * Optimized hook to upload files to Filecoin using Synapse SDK.
+ * Follows the latest SDK patterns and automatically stores metadata on server.
  */
 export const useFileUpload = () => {
   const [progress, setProgress] = useState(0);
@@ -39,14 +38,13 @@ export const useFileUpload = () => {
   const [detailedProgress, setDetailedProgress] = useState({
     preflight: false,
     contextSetup: false,
-    providerSelected: false,
-    datasetReady: false,
     uploaded: false,
     pieceAdded: false,
     confirmed: false,
+    serverStored: false,
   });
 
-  const { synapse } = useSynapse();
+  const { synapse, storageContext, isInitialized } = useSynapse();
   const { triggerConfetti } = useConfetti();
   const { address } = useAccount();
 
@@ -63,7 +61,11 @@ export const useFileUpload = () => {
     mutationKey: ["file-upload", address],
     mutationFn: async (file: File) => {
       try {
-        if (!synapse) throw new Error("Synapse SDK not initialized");
+        if (!synapse || !isInitialized) {
+          throw new Error(
+            "Synapse SDK not initialized. Please wait or reconnect your wallet."
+          );
+        }
         if (!address) throw new Error("Wallet not connected");
 
         // Initialize upload state
@@ -72,11 +74,10 @@ export const useFileUpload = () => {
         setDetailedProgress({
           preflight: false,
           contextSetup: false,
-          providerSelected: false,
-          datasetReady: false,
           uploaded: false,
           pieceAdded: false,
           confirmed: false,
+          serverStored: false,
         });
 
         updateProgress(
@@ -85,7 +86,7 @@ export const useFileUpload = () => {
           "initializing"
         );
 
-        // Validate file size early
+        // Validate file size according to Synapse SDK limits
         const fileSizeInMB = file.size / (1024 * 1024);
         if (file.size < 127) {
           throw new Error("File too small. Minimum size is 127 bytes.");
@@ -99,163 +100,67 @@ export const useFileUpload = () => {
         const arrayBuffer = await file.arrayBuffer();
         const uint8ArrayBytes = new Uint8Array(arrayBuffer);
 
-        // 2) Preflight checks - payment setup and cost estimation
+        // 2) Preflight checks - validate allowances and costs
         updateProgress(5, "💰 Running preflight checks...", "preflight");
-        await preflightCheck(
-          file,
-          synapse,
-          true, // Include dataset creation fee if no dataset exists
-          (status) => updateProgress(progress + 1, status, "preflight"),
-          (prog) => setProgress(Math.max(progress, prog))
-        );
-
-        setDetailedProgress((prev) => ({ ...prev, preflight: true }));
-
-        // 3) Run SDK preflight check for detailed cost estimation
-        updateProgress(20, "� Calculating storage costs...", "preflight");
         const preflightInfo = await synapse.storage.preflightUpload(file.size, {
           withCDN: true,
-          metadata: {
-            fileName: file.name,
-            fileType: file.type,
-            uploadTimestamp: new Date().toISOString(),
-          },
         });
 
         if (!preflightInfo.allowanceCheck.sufficient) {
           throw new Error(
-            "Insufficient allowances for storage. Please check your USDFC balance."
+            "Insufficient allowances for storage. Please check your USDFC balance and approve the service."
           );
         }
 
         console.log("Preflight info:", preflightInfo);
-        updateProgress(25, "🔗 Setting up storage context...", "context_setup");
+        setDetailedProgress((prev) => ({ ...prev, preflight: true }));
+        updateProgress(15, "✅ Preflight checks passed", "preflight");
 
-        // 4) Create storage context with comprehensive callbacks
-        let contextCreationTime = Date.now();
-        const context = await synapse.storage.createContext({
-          withCDN: true, // Enable CDN for faster retrieval
+        // 3) Use existing storage context or create new one
+        updateProgress(20, "🔗 Setting up storage context...", "context_setup");
+        let uploadContext = storageContext;
+
+        if (!uploadContext) {
+          updateProgress(25, "🏗️ Creating storage context...", "context_setup");
+          uploadContext = await synapse.storage.createContext({
+            withCDN: true,
+            metadata: {
+              contentType: "video",
+              fileName: file.name,
+              fileType: file.type,
+              uploadTimestamp: new Date().toISOString(),
+            },
+          });
+        }
+
+        setDetailedProgress((prev) => ({
+          ...prev,
+          contextSetup: true,
+        }));
+
+        setUploadedInfo((prev) => ({
+          ...prev,
+          fileName: file.name,
+          fileSize: file.size,
+          dataSetId: uploadContext!.dataSetId,
+          providerAddress: uploadContext!.serviceProvider,
+        }));
+
+        updateProgress(40, "📁 Uploading to Filecoin storage...", "uploading");
+
+        // 4) Upload file using the optimized SDK patterns
+        const result = await uploadContext.upload(uint8ArrayBytes, {
           metadata: {
             fileName: file.name,
             fileType: file.type,
             uploadTimestamp: new Date().toISOString(),
             fileSizeMB: fileSizeInMB.toFixed(2),
+            uploadedBy: address,
           },
-          callbacks: {
-            onProviderSelected: (provider) => {
-              console.log("Storage provider selected:", provider);
-              updateProgress(
-                30,
-                `🏪 Selected provider: ${provider.serviceProvider.slice(
-                  0,
-                  8
-                )}...`,
-                "provider_selection"
-              );
-              setDetailedProgress((prev) => ({
-                ...prev,
-                providerSelected: true,
-              }));
-              setUploadedInfo((prev) => ({
-                ...prev,
-                providerAddress: provider.serviceProvider,
-              }));
-            },
-            onDataSetResolved: (info) => {
-              console.log("Dataset resolved:", info);
-              const elapsed = Math.round(
-                (Date.now() - contextCreationTime) / 1000
-              );
-              if (info.isExisting) {
-                updateProgress(
-                  45,
-                  `🔗 Using existing dataset #${info.dataSetId} (${elapsed}s)`,
-                  "context_setup"
-                );
-              } else {
-                updateProgress(
-                  35,
-                  `🏗️ Creating new dataset #${info.dataSetId}...`,
-                  "dataset_creation"
-                );
-              }
-              setDetailedProgress((prev) => ({ ...prev, contextSetup: true }));
-              setUploadedInfo((prev) => ({
-                ...prev,
-                dataSetId: info.dataSetId,
-              }));
-            },
-            onDataSetCreationStarted: (transactionResponse, statusUrl) => {
-              console.log("Dataset creation started:", transactionResponse);
-              console.log("Dataset creation status URL:", statusUrl);
-              updateProgress(
-                40,
-                `🏗️ Dataset creation tx: ${transactionResponse.hash.slice(
-                  0,
-                  10
-                )}...`,
-                "dataset_creation"
-              );
-              setUploadedInfo((prev) => ({
-                ...prev,
-                txHash: transactionResponse.hash,
-              }));
-            },
-            onDataSetCreationProgress: (status) => {
-              console.log("Dataset creation progress:", status);
-              const elapsed = Math.round(status.elapsedMs / 1000);
-
-              if (status.transactionMined && !status.transactionSuccess) {
-                updateProgress(
-                  43,
-                  `⚠️ Transaction mined but failed (${elapsed}s)`,
-                  "dataset_creation"
-                );
-              } else if (status.transactionSuccess && !status.dataSetLive) {
-                updateProgress(
-                  46,
-                  `⛓️ Transaction confirmed, waiting for dataset (${elapsed}s)`,
-                  "dataset_creation"
-                );
-              } else if (status.dataSetLive && !status.serverConfirmed) {
-                updateProgress(
-                  48,
-                  `📡 Dataset live, awaiting server confirmation (${elapsed}s)`,
-                  "dataset_creation"
-                );
-              } else if (status.serverConfirmed) {
-                updateProgress(
-                  50,
-                  `🎉 Dataset ready! (${elapsed}s)`,
-                  "context_setup"
-                );
-                setDetailedProgress((prev) => ({
-                  ...prev,
-                  datasetReady: true,
-                }));
-              }
-            },
-          },
-        });
-
-        setDetailedProgress((prev) => ({
-          ...prev,
-          contextSetup: true,
-          datasetReady: true,
-        }));
-
-        // 5) Upload file to storage provider
-        updateProgress(
-          55,
-          "📁 Uploading file to storage provider...",
-          "uploading"
-        );
-
-        const result = await context.upload(uint8ArrayBytes, {
           onUploadComplete: (pieceCid) => {
             console.log("Upload complete:", pieceCid);
             updateProgress(
-              70,
+              60,
               `📊 File uploaded! PieceCID: ${pieceCid
                 .toString()
                 .slice(0, 12)}...`,
@@ -264,43 +169,34 @@ export const useFileUpload = () => {
             setDetailedProgress((prev) => ({ ...prev, uploaded: true }));
             setUploadedInfo((prev) => ({
               ...prev,
-              fileName: file.name,
-              fileSize: file.size,
               pieceCid: pieceCid.toString(),
             }));
           },
           onPieceAdded: (transactionResponse) => {
+            console.log("Piece addition:", transactionResponse);
+            updateProgress(
+              75,
+              "🔄 Adding piece to dataset...",
+              "piece_addition"
+            );
+            setDetailedProgress((prev) => ({ ...prev, pieceAdded: true }));
+
             if (transactionResponse) {
-              console.log("Piece addition transaction:", transactionResponse);
-              updateProgress(
-                80,
-                `🔄 Piece addition tx: ${transactionResponse.hash.slice(
-                  0,
-                  10
-                )}...`,
-                "piece_addition"
-              );
               setUploadedInfo((prev) => ({
                 ...prev,
                 txHash: transactionResponse.hash,
               }));
-            } else {
-              updateProgress(
-                80,
-                "🔄 Adding piece to dataset (legacy server)...",
-                "piece_addition"
-              );
             }
-            setDetailedProgress((prev) => ({ ...prev, pieceAdded: true }));
           },
           onPieceConfirmed: (pieceIds) => {
             console.log("Piece confirmed with IDs:", pieceIds);
             updateProgress(
-              90,
-              `🌳 Piece confirmed! IDs: ${pieceIds.join(", ")}`,
+              85,
+              "🌳 Piece confirmed on blockchain",
               "confirmation"
             );
             setDetailedProgress((prev) => ({ ...prev, confirmed: true }));
+
             if (pieceIds.length > 0) {
               setUploadedInfo((prev) => ({
                 ...prev,
@@ -310,20 +206,84 @@ export const useFileUpload = () => {
           },
         });
 
-        // Final result processing
-        updateProgress(95, "✅ Processing upload result...", "completed");
+        updateProgress(
+          88,
+          "💾 Storing metadata on server...",
+          "server_storage"
+        );
+
+        // 5) Store video metadata on the server after successful upload
+        try {
+          const serverResponse = await fetch("/api/videos/create", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              publicAddress: address,
+              title: file.name.replace(/\.[^/.]+$/, ""), // Remove file extension for title
+              description: `Uploaded video file: ${
+                file.name
+              } (${fileSizeInMB.toFixed(2)} MB)`,
+              cid: result.pieceCid.toString(),
+              tags: ["video", "upload"],
+              metadata: {
+                fileName: file.name,
+                fileSize: file.size,
+                fileType: file.type,
+                pieceId: result.pieceId,
+                dataSetId: uploadContext.dataSetId,
+                providerAddress: uploadContext.serviceProvider,
+                uploadTimestamp: new Date().toISOString(),
+              },
+            }),
+          });
+
+          if (serverResponse.ok) {
+            const serverData = await serverResponse.json();
+            console.log("Video metadata stored on server:", serverData);
+            setUploadedInfo((prev) => ({
+              ...prev,
+              videoId: serverData.data?.id,
+            }));
+            setDetailedProgress((prev) => ({ ...prev, serverStored: true }));
+            updateProgress(
+              95,
+              "✅ Metadata stored on server",
+              "server_storage"
+            );
+          } else {
+            console.warn(
+              "Failed to store metadata on server:",
+              serverResponse.statusText
+            );
+            updateProgress(
+              92,
+              "⚠️ Upload successful, server storage failed",
+              "completed"
+            );
+          }
+        } catch (serverError) {
+          console.warn("Server storage error:", serverError);
+          updateProgress(
+            92,
+            "⚠️ Upload successful, server storage failed",
+            "completed"
+          );
+        }
+
+        updateProgress(100, "🎉 Upload completed successfully!", "completed");
 
         const finalUploadedInfo: UploadedInfo = {
           fileName: file.name,
           fileSize: file.size,
           pieceCid: result.pieceCid.toString(),
           pieceId: result.pieceId,
-          dataSetId: context.dataSetId,
-          providerAddress: context.serviceProvider,
+          dataSetId: uploadContext.dataSetId,
+          providerAddress: uploadContext.serviceProvider,
         };
 
         setUploadedInfo(finalUploadedInfo);
-
         console.log("Upload completed successfully:", result);
         return result;
       } catch (error) {
@@ -339,22 +299,10 @@ export const useFileUpload = () => {
       }
     },
     onSuccess: () => {
-      updateProgress(
-        100,
-        "🎉 File successfully stored on Filecoin!",
-        "completed"
-      );
       triggerConfetti();
     },
     onError: (error) => {
       console.error("Upload mutation failed:", error);
-      updateProgress(
-        0,
-        `❌ Upload failed: ${
-          error instanceof Error ? error.message : "Please try again"
-        }`,
-        "error"
-      );
     },
   });
 
@@ -366,11 +314,10 @@ export const useFileUpload = () => {
     setDetailedProgress({
       preflight: false,
       contextSetup: false,
-      providerSelected: false,
-      datasetReady: false,
       uploaded: false,
       pieceAdded: false,
       confirmed: false,
+      serverStored: false,
     });
   }, []);
 

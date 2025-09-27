@@ -1,200 +1,264 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { createThirdwebClient } from "thirdweb";
-import { wrapFetchWithPayment } from "thirdweb/x402";
-import { useActiveWallet } from "thirdweb/react";
-import VideoPlayer from "./VideoPlayer";
-
-const clientId = process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "your-client-id";
-const client = createThirdwebClient({ clientId: clientId });
-
-interface Video {
-  id: string;
-  title: string;
-  description: string;
-  duration: string;
-  price: string;
-  url?: string;
-}
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Play,
+  User,
+  Calendar,
+  Tag,
+  AlertCircle,
+  ExternalLink,
+  Clock,
+  Database,
+  Hash,
+} from "lucide-react";
+import { ServerVideo } from "@/types/videotypes";
 
 interface VideoGalleryProps {
   className?: string;
 }
 
 const VideoGallery: React.FC<VideoGalleryProps> = ({ className = "" }) => {
-  const wallet = useActiveWallet();
-  const [videos, setVideos] = useState<Video[]>([]);
-  const [purchasedVideos, setPurchasedVideos] = useState<Set<string>>(
-    new Set()
-  );
-  const [loadingVideo, setLoadingVideo] = useState<string | null>(null);
+  const [videos, setVideos] = useState<ServerVideo[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch available videos on component mount
+  // Fetch videos from server
   useEffect(() => {
     fetchVideos();
   }, []);
 
   const fetchVideos = async () => {
-    try {
-      const response = await fetch("/api/video");
-      if (response.ok) {
-        const data = await response.json();
-        setVideos(data.videos || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch videos:", error);
-      setError("Failed to load videos");
-    }
-  };
-
-  const purchaseVideo = async (videoId: string) => {
-    if (!wallet) {
-      setError("Please connect your wallet first");
-      return;
-    }
-
-    setLoadingVideo(videoId);
+    setLoading(true);
     setError(null);
 
     try {
-      console.log(`[VideoGallery] Initiating purchase for video ${videoId}`);
+      const response = await fetch("/api/videos", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+      });
 
-      const fetchWithPay = wrapFetchWithPayment(fetch, client, wallet);
-      const response = await fetchWithPay(`/api/video?id=${videoId}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch videos: ${response.status}`);
+      }
 
-      console.log(`[VideoGallery] Response status: ${response.status}`);
+      const data = await response.json();
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log("[VideoGallery] Purchase successful:", data);
-
-        // Add to purchased videos
-        setPurchasedVideos((prev) => new Set(prev).add(videoId));
-
-        // Update the video with the URL
-        setVideos((prev) =>
-          prev.map((video) =>
-            video.id === videoId ? { ...video, url: data.video.url } : video
-          )
-        );
-
-        setError(null); // Clear any previous errors
+      if (data.success) {
+        setVideos(data.data || []);
       } else {
-        let errorMessage = "Purchase failed";
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorData.message || errorMessage;
-        } catch (parseError) {
-          console.error("Failed to parse error response:", parseError);
-        }
-
-        console.error(`[VideoGallery] Purchase failed: ${errorMessage}`);
-        setError(errorMessage);
+        throw new Error(data.error || "Failed to fetch videos");
       }
-    } catch (error) {
-      console.error("[VideoGallery] Purchase error:", error);
-
-      let errorMessage = "Purchase failed. Please try again.";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-
-      setError(errorMessage);
+    } catch (err) {
+      console.error("Error fetching videos:", err);
+      setError(err instanceof Error ? err.message : "Failed to fetch videos");
     } finally {
-      setLoadingVideo(null);
+      setLoading(false);
     }
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const truncateAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  const getIPFSUrl = (cid: string) => {
+    return `https://ipfs.io/ipfs/${cid}`;
+  };
+
+  // Loading skeleton
+  const VideoSkeleton = () => (
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
+      <CardHeader className="pb-3">
+        <Skeleton className="h-6 w-3/4" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-2/3" />
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex flex-wrap gap-1">
+          <Skeleton className="h-5 w-16" />
+          <Skeleton className="h-5 w-20" />
+        </div>
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+        <Skeleton className="h-9 w-full" />
+      </CardContent>
+    </Card>
+  );
+
   if (error) {
     return (
-      <div
-        className={`bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded ${className}`}
-      >
-        {error}
+      <div className={className}>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchVideos}
+              className="ml-4"
+            >
+              Try Again
+            </Button>
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
 
   return (
     <div className={`space-y-6 ${className}`}>
-      <h2 className="text-2xl font-bold text-center mb-8">Video Gallery</h2>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Database className="h-6 w-6 text-primary" />
+          <h2 className="text-2xl font-bold">Video Gallery</h2>
+          {!loading && (
+            <Badge variant="secondary" className="ml-2">
+              {videos.length} {videos.length === 1 ? "video" : "videos"}
+            </Badge>
+          )}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchVideos}
+          disabled={loading}
+        >
+          {loading ? "Loading..." : "Refresh"}
+        </Button>
+      </div>
 
-      {videos.length === 0 ? (
-        <div className="text-center text-gray-500">Loading videos...</div>
+      {/* Videos Grid */}
+      {loading ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Array(6)
+            .fill(0)
+            .map((_, index) => (
+              <VideoSkeleton key={index} />
+            ))}
+        </div>
+      ) : videos.length === 0 ? (
+        <Card className="p-8 text-center">
+          <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
+            <Database className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">No Videos Found</h3>
+          <p className="text-muted-foreground mb-4">
+            No videos have been uploaded to the platform yet.
+          </p>
+          <Button variant="outline" onClick={fetchVideos}>
+            Refresh
+          </Button>
+        </Card>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {videos.map((video) => {
-            const isPurchased = purchasedVideos.has(video.id);
-            const isLoading = loadingVideo === video.id;
+          {videos.map((video) => (
+            <Card
+              key={video.id}
+              className="overflow-hidden hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm"
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between mb-2">
+                  <CardTitle className="text-lg leading-tight line-clamp-2">
+                    {video.title}
+                  </CardTitle>
+                  <Badge variant="outline" className="ml-2 shrink-0">
+                    #{video.id}
+                  </Badge>
+                </div>
 
-            return (
-              <div
-                key={video.id}
-                className="bg-white rounded-lg shadow-lg overflow-hidden"
-              >
-                {isPurchased && video.url ? (
-                  <VideoPlayer
-                    src={video.url}
-                    title={video.title}
-                    width="100%"
-                    height="200px"
-                    controls={true}
-                  />
-                ) : (
-                  <div className="h-48 bg-gray-200 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="text-4xl mb-2">🔒</div>
-                      <div className="text-sm text-gray-600">
-                        Premium Content
-                      </div>
-                    </div>
+                {video.description && (
+                  <p className="text-sm text-muted-foreground line-clamp-3">
+                    {video.description}
+                  </p>
+                )}
+              </CardHeader>
+
+              <CardContent className="space-y-4">
+                {/* Tags */}
+                {video.tags && video.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {video.tags.slice(0, 3).map((tag, index) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="text-xs"
+                      >
+                        <Tag className="w-3 h-3 mr-1" />
+                        {tag}
+                      </Badge>
+                    ))}
+                    {video.tags.length > 3 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{video.tags.length - 3} more
+                      </Badge>
+                    )}
                   </div>
                 )}
 
-                <div className="p-4">
-                  <h3 className="font-semibold text-lg mb-2">{video.title}</h3>
-                  <p className="text-gray-600 text-sm mb-3">
-                    {video.description}
-                  </p>
-
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm text-gray-500">
-                      Duration: {video.duration}
-                    </span>
-                    <span className="font-bold text-green-600">
-                      {video.price}
-                    </span>
-                  </div>
-
-                  {!isPurchased && (
-                    <button
-                      onClick={() => purchaseVideo(video.id)}
-                      disabled={!wallet || isLoading}
-                      className={`w-full py-2 px-4 rounded-lg font-medium ${
-                        wallet && !isLoading
-                          ? "bg-blue-600 hover:bg-blue-700 text-white"
-                          : "bg-gray-400 text-gray-700 cursor-not-allowed"
-                      }`}
-                    >
-                      {isLoading
-                        ? "Processing..."
-                        : wallet
-                        ? `Buy for ${video.price}`
-                        : "Connect Wallet"}
-                    </button>
-                  )}
-
-                  {isPurchased && (
-                    <div className="w-full py-2 px-4 rounded-lg bg-green-100 text-green-800 text-center font-medium">
-                      ✓ Purchased
-                    </div>
-                  )}
+                {/* Creator Info */}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <User className="w-4 h-4" />
+                  <span className="font-mono">
+                    {truncateAddress(video.publicAddress)}
+                  </span>
                 </div>
-              </div>
-            );
-          })}
+
+                {/* Date */}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="w-4 h-4" />
+                  <span>{formatDate(video.createdAt)}</span>
+                </div>
+
+                {/* IPFS CID */}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Hash className="w-4 h-4" />
+                  <span className="font-mono text-xs truncate">
+                    {video.cid}
+                  </span>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => window.open(getIPFSUrl(video.cid), "_blank")}
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    View on IPFS
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(getIPFSUrl(video.cid), "_blank")}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
     </div>

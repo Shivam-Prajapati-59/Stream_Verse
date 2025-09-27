@@ -11,12 +11,12 @@ import { BalanceData } from "@/types/types";
 export function useBalances() {
   const { address, isConnected } = useAccount();
   const { data: balance } = useBalance({ address });
-  const { synapse, warmStorageService } = useSynapse();
+  const { synapse } = useSynapse();
 
   return useQuery({
     queryKey: ["balances", address],
     queryFn: async (): Promise<BalanceData> => {
-      if (!synapse || !warmStorageService || !address) {
+      if (!synapse || !address) {
         throw new Error("Missing required dependencies");
       }
 
@@ -29,7 +29,7 @@ export function useBalances() {
       ] = await Promise.all([
         synapse.payments.accountInfo(),
         synapse.payments.walletBalance(),
-        warmStorageService.getClientDataSetsWithDetails(address),
+        synapse.storage.findDataSets(address),
         synapse.payments.getRailsAsPayer(),
         synapse.payments.getRailsAsPayee(),
       ]);
@@ -104,7 +104,7 @@ export function useBalances() {
         currentLockupAllowance,
       };
     },
-    enabled: !!synapse && !!warmStorageService && !!address && isConnected,
+    enabled: !!synapse && !!address && isConnected,
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 }

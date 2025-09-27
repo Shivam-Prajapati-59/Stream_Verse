@@ -30,6 +30,12 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { useFileUpload } from "@/hooks/useFileUpload";
+import { config } from "@/config";
+import {
+  formatFileSize,
+  isVideoFile,
+  generateVideoTitle,
+} from "@/utils/uploadUtils";
 import z from "zod";
 
 // Form validation schema
@@ -51,12 +57,20 @@ const formSchema = z.object({
     .any()
     .refine((files) => files?.length == 1, "Video file is required.")
     .refine(
-      (files) => files?.[0]?.type?.startsWith("video/"),
-      "Only video files are allowed."
+      (files) => config.upload.supportedVideoTypes.includes(files?.[0]?.type),
+      `Only supported video files are allowed: ${config.upload.supportedVideoTypes.join(
+        ", "
+      )}`
     )
     .refine(
-      (files) => files?.[0]?.size <= 100 * 1024 * 1024, // 100MB
-      "Video file must be less than 100MB."
+      (files) => files?.[0]?.size >= config.upload.minFileSize,
+      `File too small. Minimum size is ${config.upload.minFileSize} bytes.`
+    )
+    .refine(
+      (files) => files?.[0]?.size <= config.upload.maxFileSize,
+      `File too large. Maximum size is ${formatFileSize(
+        config.upload.maxFileSize
+      )}.`
     ),
 });
 

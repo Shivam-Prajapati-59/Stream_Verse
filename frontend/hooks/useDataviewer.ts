@@ -33,18 +33,14 @@ export const useDatasets = () => {
   const { address, isConnected } = useAccount();
   const {
     synapse,
-    warmStorageService,
+
     isLoading: synapseLoading,
     error: synapseError,
   } = useSynapse();
 
   return useQuery({
     enabled: !!address && isConnected && !synapseLoading && !synapseError,
-    queryKey: [
-      "datasets",
-      address,
-      warmStorageService?.getViewContractAddress(),
-    ],
+    queryKey: ["datasets", address, synapse?.getWarmStorageAddress()],
     queryFn: async (): Promise<{ datasets: EnhancedDataSetWithPieces[] }> => {
       // STEP 1: Validate prerequisites with enhanced error messages
       if (!synapse) {
@@ -57,18 +53,16 @@ export const useDatasets = () => {
           "Wallet address not available. Please connect your wallet."
         );
       }
-      if (!warmStorageService) {
+      if (!synapse) {
         throw new Error(
-          "Warm Storage service not available. Please check network connection."
+          "Synapse SDK not available. Please check network connection."
         );
       }
 
       try {
         // STEP 2: Fetch enhanced dataset information with provider details
         console.log("Fetching client datasets with enhanced details...");
-        const datasets = await warmStorageService.getClientDataSetsWithDetails(
-          address
-        );
+        const datasets = await synapse.storage.findDataSets(address);
 
         console.log(`Found ${datasets.length} datasets for address ${address}`);
 

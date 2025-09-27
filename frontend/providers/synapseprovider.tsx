@@ -1,25 +1,33 @@
 "use client";
 
-import { Synapse, WarmStorageService, RPC_URLS } from "@filoz/synapse-sdk";
-import { createContext, useState, useEffect, useContext } from "react";
+import { Synapse, RPC_URLS, type StorageContext } from "@filoz/synapse-sdk";
+import {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  useCallback,
+} from "react";
 import { useEthersSigner } from "@/hooks/useEthers";
 import { useAccount } from "wagmi";
 import { config } from "@/config";
 
 interface SynapseContextType {
   synapse: Synapse | null;
-  warmStorageService: WarmStorageService | null;
+  storageContext: StorageContext | null;
   isLoading: boolean;
   error: string | null;
   reconnect: () => void;
+  isInitialized: boolean;
 }
 
 export const SynapseContext = createContext<SynapseContextType>({
   synapse: null,
-  warmStorageService: null,
+  storageContext: null,
   isLoading: false,
   error: null,
   reconnect: () => {},
+  isInitialized: false,
 });
 
 export const SynapseProvider = ({
@@ -28,18 +36,21 @@ export const SynapseProvider = ({
   children: React.ReactNode;
 }) => {
   const [synapse, setSynapse] = useState<Synapse | null>(null);
-  const [warmStorageService, setWarmStorageService] =
-    useState<WarmStorageService | null>(null);
+  const [storageContext, setStorageContext] = useState<StorageContext | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const signer = useEthersSigner();
   const { isConnected, chainId } = useAccount();
 
-  const createSynapse = async () => {
+  const createSynapse = useCallback(async () => {
     if (!signer || !isConnected) {
       setSynapse(null);
-      setWarmStorageService(null);
+      setStorageContext(null);
+      setIsInitialized(false);
       return;
     }
 
@@ -56,10 +67,14 @@ export const SynapseProvider = ({
         // Filecoin Calibration Testnet
         rpcURL = RPC_URLS.calibration.websocket;
       } else {
-        throw new Error(
-          `Unsupported network. Please connect to Filecoin Mainnet (314) or Calibration (314159). Current chain ID: ${chainId}`
+        // Default to calibration for testing
+        console.warn(
+          `Unsupported chain ID: ${chainId}, defaulting to Filecoin Calibration`
         );
+        rpcURL = RPC_URLS.calibration.websocket;
       }
+
+      console.log(`Initializing Synapse SDK with RPC: ${rpcURL}`);
 
       const synapseInstance = await Synapse.create({
         signer,
@@ -68,33 +83,57 @@ export const SynapseProvider = ({
         disableNonceManager: false,
       });
 
-      const warmStorageAddress = await synapseInstance.getWarmStorageAddress();
-      const warmStorageServiceInstance = await WarmStorageService.create(
-        synapseInstance.getProvider(),
-        warmStorageAddress
+      // Create a default storage context for video uploads
+      const defaultStorageContext = await synapseInstance.storage.createContext(
+        {
+          withCDN: config.withCDN,
+          metadata: {
+            source: "StreamVerse",
+            contentType: "video",
+            version: "1.0.0",
+          },
+          callbacks: {
+            onProviderSelected: (provider) => {
+              console.log(
+                `Storage provider selected: ${provider.serviceProvider}`
+              );
+            },
+            onDataSetResolved: (info) => {
+              console.log(
+                `Dataset ${info.isExisting ? "reused" : "created"}: ${
+                  info.dataSetId
+                }`
+              );
+            },
+          },
+        }
       );
 
       setSynapse(synapseInstance);
-      setWarmStorageService(warmStorageServiceInstance);
+      setStorageContext(defaultStorageContext);
+      setIsInitialized(true);
+
+      console.log("Synapse SDK initialized successfully");
     } catch (err) {
       console.error("Failed to create Synapse instance:", err);
       setError(
         err instanceof Error ? err.message : "Failed to initialize Synapse SDK"
       );
       setSynapse(null);
-      setWarmStorageService(null);
+      setStorageContext(null);
+      setIsInitialized(false);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [signer, isConnected, chainId]);
 
-  const reconnect = () => {
+  const reconnect = useCallback(() => {
     createSynapse();
-  };
+  }, [createSynapse]);
 
   useEffect(() => {
     createSynapse();
-  }, [signer, isConnected, chainId]);
+  }, [createSynapse]);
 
   // Cleanup WebSocket connections when component unmounts
   useEffect(() => {
@@ -112,10 +151,11 @@ export const SynapseProvider = ({
     <SynapseContext.Provider
       value={{
         synapse,
-        warmStorageService,
+        storageContext,
         isLoading,
         error,
         reconnect,
+        isInitialized,
       }}
     >
       {children}

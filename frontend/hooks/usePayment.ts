@@ -20,7 +20,7 @@ export const usePayment = () => {
   const [status, setStatus] = useState<string>("");
   const { triggerConfetti } = useConfetti();
   const { address } = useAccount();
-  const { synapse, warmStorageService } = useSynapse();
+  const { synapse } = useSynapse();
   const mutation = useMutation({
     mutationFn: async ({
       lockupAllowance,
@@ -33,15 +33,13 @@ export const usePayment = () => {
     }) => {
       if (!address) throw new Error("Address not found");
       if (!synapse) throw new Error("Synapse not found");
-      if (!warmStorageService)
-        throw new Error("Warm storage service not found");
       setStatus("🔄 Preparing transaction...");
 
       const paymentsAddress = synapse.getPaymentsAddress();
 
-      const dataset = (
-        await warmStorageService.getClientDataSetsWithDetails(address)
-      ).filter((dataset) => dataset.withCDN === config.withCDN);
+      const dataset = (await synapse.storage.findDataSets(address)).filter(
+        (dataset: any) => dataset.withCDN === config.withCDN
+      );
 
       const hasDataset = dataset.length > 0;
 
