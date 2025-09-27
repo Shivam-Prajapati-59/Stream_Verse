@@ -169,7 +169,6 @@ const FileUploadForm = () => {
   return (
     <div className="w-full p-6">
       <div className="space-y-6">
-
         {/* Enhanced Upload Progress Section */}
         {(isActuallyUploading || uploadedInfo || status) && (
           <div className="mb-6 space-y-4 border rounded-lg p-4 bg-muted/20">

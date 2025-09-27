@@ -2,21 +2,27 @@
 
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import StorageBalance from "@/components/custom/StorageBalance";
 import FileUploadForm from "@/components/custom/FileUploadForm";
 import { DataViewer } from "@/components/custom/DataViewer";
-import { 
-  Upload, 
-  Database, 
-  BarChart3, 
-  Settings, 
-  FileVideo, 
+import {
+  Upload,
+  Database,
+  BarChart3,
+  Settings,
+  FileVideo,
   Cloud,
   Activity,
-  Zap
+  Zap,
 } from "lucide-react";
 
 const StreamsPage = () => {
@@ -34,7 +40,8 @@ const StreamsPage = () => {
             Stream Verse
           </h1>
           <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
-            Upload, manage, and share your videos on the decentralized Filecoin network
+            Upload, manage, and share your videos on the decentralized Filecoin
+            network
           </p>
           <div className="flex justify-center gap-2 mt-4">
             <Badge variant="secondary" className="gap-1">
@@ -83,7 +90,8 @@ const StreamsPage = () => {
                   Upload New Video
                 </CardTitle>
                 <CardDescription>
-                  Upload your videos to the decentralized Filecoin network for permanent, censorship-resistant storage
+                  Upload your videos to the decentralized Filecoin network for
+                  permanent, censorship-resistant storage
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
@@ -127,12 +135,15 @@ const StreamsPage = () => {
                   </p>
                   <div className="mt-2">
                     <div className="w-full bg-secondary rounded-full h-2">
-                      <div className="bg-blue-600 h-2 rounded-full" style={{width: '24%'}}></div>
+                      <div
+                        className="bg-blue-600 h-2 rounded-full"
+                        style={{ width: "24%" }}
+                      ></div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
@@ -146,13 +157,18 @@ const StreamsPage = () => {
                     +2 new this week
                   </p>
                   <div className="flex gap-1 mt-2">
-                    {Array(12).fill(0).map((_, i) => (
-                      <div key={i} className="w-2 h-2 bg-green-600 rounded-full opacity-60"></div>
-                    ))}
+                    {Array(12)
+                      .fill(0)
+                      .map((_, i) => (
+                        <div
+                          key={i}
+                          className="w-2 h-2 bg-green-600 rounded-full opacity-60"
+                        ></div>
+                      ))}
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card className="hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
@@ -210,22 +226,30 @@ const StreamsPage = () => {
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium">Video uploaded successfully</p>
-                        <p className="text-xs text-muted-foreground">2 minutes ago</p>
+                        <p className="text-sm font-medium">
+                          Video uploaded successfully
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          2 minutes ago
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                       <div className="flex-1">
                         <p className="text-sm font-medium">Dataset created</p>
-                        <p className="text-xs text-muted-foreground">1 hour ago</p>
+                        <p className="text-xs text-muted-foreground">
+                          1 hour ago
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                       <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                       <div className="flex-1">
                         <p className="text-sm font-medium">Payment processed</p>
-                        <p className="text-xs text-muted-foreground">3 hours ago</p>
+                        <p className="text-xs text-muted-foreground">
+                          3 hours ago
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -287,7 +311,9 @@ const StreamsPage = () => {
                   <Separator />
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <div className="text-sm font-medium">Storage Duration</div>
+                      <div className="text-sm font-medium">
+                        Storage Duration
+                      </div>
                       <div className="text-xs text-muted-foreground">
                         Default storage period for new uploads
                       </div>
