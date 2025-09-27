@@ -59,12 +59,16 @@ const VideoGallery: React.FC<VideoGalleryProps> = ({ className = "" }) => {
     setError(null);
 
     try {
+      console.log(`[VideoGallery] Initiating purchase for video ${videoId}`);
+
       const fetchWithPay = wrapFetchWithPayment(fetch, client, wallet);
       const response = await fetchWithPay(`/api/video?id=${videoId}`);
 
+      console.log(`[VideoGallery] Response status: ${response.status}`);
+
       if (response.ok) {
         const data = await response.json();
-        console.log("Purchase successful:", data);
+        console.log("[VideoGallery] Purchase successful:", data);
 
         // Add to purchased videos
         setPurchasedVideos((prev) => new Set(prev).add(videoId));
@@ -75,13 +79,29 @@ const VideoGallery: React.FC<VideoGalleryProps> = ({ className = "" }) => {
             video.id === videoId ? { ...video, url: data.video.url } : video
           )
         );
+
+        setError(null); // Clear any previous errors
       } else {
-        const errorData = await response.json();
-        setError(errorData.error || "Purchase failed");
+        let errorMessage = "Purchase failed";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (parseError) {
+          console.error("Failed to parse error response:", parseError);
+        }
+
+        console.error(`[VideoGallery] Purchase failed: ${errorMessage}`);
+        setError(errorMessage);
       }
     } catch (error) {
-      console.error("Purchase failed:", error);
-      setError("Purchase failed. Please try again.");
+      console.error("[VideoGallery] Purchase error:", error);
+
+      let errorMessage = "Purchase failed. Please try again.";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      setError(errorMessage);
     } finally {
       setLoadingVideo(null);
     }

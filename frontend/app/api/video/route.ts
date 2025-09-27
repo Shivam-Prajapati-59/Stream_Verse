@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
   try {
     if (videoId) {
-      // Get specific video by ID
+      // Get specific video by ID - this requires payment (handled by middleware)
       const video = videoDatabase.find((v) => v.id === videoId);
 
       if (!video) {
@@ -42,6 +42,8 @@ export async function GET(request: NextRequest) {
       }
 
       // If we reach this point, payment was successful (middleware handled it)
+      console.log(`[Video API] Payment verified for video ${videoId}`);
+
       return NextResponse.json({
         success: true,
         video: {
