@@ -6,7 +6,7 @@ import { useSynapse } from "@/providers/synapseprovider";
 import { config } from "@/config";
 import { formatUnits } from "viem";
 import { BalanceData } from "@/types/types";
-import { TOKENS } from "@filoz/synapse-sdk";
+// TOKENS import removed as walletBalance() now defaults to USDFC
 
 export function useBalances() {
   const { address, isConnected } = useAccount();
@@ -28,7 +28,7 @@ export function useBalances() {
         railsAsPayee,
       ] = await Promise.all([
         synapse.payments.accountInfo(),
-        synapse.payments.walletBalance(TOKENS.USDFC),
+        synapse.payments.walletBalance(),
         warmStorageService.getClientDataSetsWithDetails(address),
         synapse.payments.getRailsAsPayer(),
         synapse.payments.getRailsAsPayee(),

@@ -186,10 +186,13 @@ export const useApprovedProviders = () => {
       }
 
       try {
-        // Just get approved provider IDs from WarmStorageService
-        // For detailed provider info, we'd need ProviderResolver which requires SPRegistryService
+        // Get approved provider IDs from WarmStorageService
         const providerIds = await warmStorageService.getApprovedProviderIds();
-        return providerIds.map((id) => ({ id, name: `Provider ${id}` }));
+        return providerIds.map((id: number, index: number) => ({
+          id,
+          index,
+          name: `Provider ${id}`,
+        }));
       } catch (error) {
         console.error("Failed to fetch approved providers:", error);
         throw error;
@@ -215,10 +218,10 @@ export const useProviderApprovalStatus = (providerId?: number) => {
       }
 
       try {
-        // Check if provider is approved
-        const isApproved = await warmStorageService.isProviderIdApproved(
-          providerId
-        );
+        // Check if provider is approved using provider address method
+        // We need to get provider address first from provider ID
+        const providerIds = await warmStorageService.getApprovedProviderIds();
+        const isApproved = providerIds.includes(providerId);
         return isApproved;
       } catch (error) {
         console.error("Failed to check provider approval:", error);

@@ -93,7 +93,15 @@ export const useDatasets = () => {
         const providersResults = await Promise.allSettled(
           uniqueProviderIds.map(async (providerId) => {
             try {
-              const provider = await synapse.getProviderInfo(providerId);
+              // Get the provider address from the dataset to use with getProviderInfo
+              const datasets = providerIdToDatasetMap.get(providerId) || [];
+              const providerAddress = datasets[0]?.payee;
+              if (!providerAddress) {
+                throw new Error(
+                  `No provider address found for provider ID ${providerId}`
+                );
+              }
+              const provider = await synapse.getProviderInfo(providerAddress);
               return { providerId, provider };
             } catch (error) {
               console.warn(

@@ -49,12 +49,9 @@ export const usePayment = () => {
 
       const amount = depositAmount + fee;
 
-      const allowance = await synapse.payments.allowance(
-        paymentsAddress,
-        TOKENS.USDFC
-      );
+      const allowance = await synapse.payments.allowance(paymentsAddress);
 
-      const balance = await synapse.payments.walletBalance(TOKENS.USDFC);
+      const balance = await synapse.payments.walletBalance();
 
       if (balance < amount) {
         throw new Error("Insufficient USDFC balance");
@@ -64,8 +61,7 @@ export const usePayment = () => {
         setStatus("💰 Approving USDFC to cover storage costs...");
         const transaction = await synapse.payments.approve(
           paymentsAddress,
-          MAX_UINT256,
-          TOKENS.USDFC
+          MAX_UINT256
         );
         await transaction.wait();
         setStatus("💰 Successfully approved USDFC to cover storage costs");

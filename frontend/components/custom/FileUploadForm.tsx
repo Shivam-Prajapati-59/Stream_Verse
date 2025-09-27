@@ -167,19 +167,8 @@ const FileUploadForm = () => {
     uploadFileMutation.isPending || isUploading || isHookUploading;
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4">
-      <div className="bg-card border rounded-lg shadow-lg p-6">
-        <div className="text-center space-y-1 mb-6">
-          <div className="flex justify-center">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Upload className="h-6 w-6 text-primary" />
-            </div>
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight">Upload Video</h1>
-          <p className="text-sm text-muted-foreground">
-            Share your video content with the world
-          </p>
-        </div>
+    <div className="w-full p-6">
+      <div className="space-y-6">
 
         {/* Enhanced Upload Progress Section */}
         {(isActuallyUploading || uploadedInfo || status) && (

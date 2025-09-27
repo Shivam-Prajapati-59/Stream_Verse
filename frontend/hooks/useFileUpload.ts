@@ -252,11 +252,6 @@ export const useFileUpload = () => {
         );
 
         const result = await context.upload(uint8ArrayBytes, {
-          metadata: {
-            originalName: file.name,
-            mimeType: file.type,
-            uploadSource: "web-interface",
-          },
           onUploadComplete: (pieceCid) => {
             console.log("Upload complete:", pieceCid);
             updateProgress(
