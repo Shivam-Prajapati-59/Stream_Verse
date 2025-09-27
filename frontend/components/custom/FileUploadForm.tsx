@@ -67,9 +67,20 @@ const FileUploadForm = () => {
   const [tags, setTags] = React.useState<string[]>([]);
   const [currentTag, setCurrentTag] = React.useState("");
 
-  // Use the file upload hook
-  const { uploadFileMutation, progress, uploadedInfo, handleReset, status } =
-    useFileUpload();
+  // Use the enhanced file upload hook
+  const {
+    uploadFileMutation,
+    progress,
+    uploadedInfo,
+    handleReset,
+    status,
+    stage,
+    detailedProgress,
+    isUploading: isHookUploading,
+    isSuccess,
+    isError,
+    error,
+  } = useFileUpload();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -152,7 +163,8 @@ const FileUploadForm = () => {
 
   const watchedVideo = form.watch("video");
   const selectedFileName = watchedVideo?.[0]?.name || "";
-  const isActuallyUploading = uploadFileMutation.isPending || isUploading;
+  const isActuallyUploading =
+    uploadFileMutation.isPending || isUploading || isHookUploading;
 
   return (
     <div className="w-full max-w-4xl mx-auto p-4">
@@ -169,21 +181,116 @@ const FileUploadForm = () => {
           </p>
         </div>
 
-        {/* Upload Progress Section */}
+        {/* Enhanced Upload Progress Section */}
         {(isActuallyUploading || uploadedInfo || status) && (
-          <div className="mb-6 space-y-4">
-            {/* Progress Bar */}
+          <div className="mb-6 space-y-4 border rounded-lg p-4 bg-muted/20">
+            {/* Enhanced Progress Bar with Stage Indicators */}
             {isActuallyUploading && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium">Upload Progress</span>
-                  <span>{progress}%</span>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-lg">Upload Progress</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold text-primary">
+                      {progress}%
+                    </span>
+                    <div className="text-xs text-muted-foreground">
+                      {progress < 100 ? "Uploading..." : "Complete!"}
+                    </div>
+                  </div>
                 </div>
-                <Progress value={progress} className="h-2" />
+
+                {/* Main Progress Bar */}
+                <div className="space-y-1">
+                  <Progress value={progress} className="h-3" />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>0%</span>
+                    <span>25%</span>
+                    <span>50%</span>
+                    <span>75%</span>
+                    <span>100%</span>
+                  </div>
+                </div>
+
+                {/* Detailed Progress Steps */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
+                  <div
+                    className={`text-xs p-2 rounded border ${
+                      progress >= 20
+                        ? "bg-green-50 border-green-200 text-green-700"
+                        : "bg-muted border-muted-foreground/20"
+                    }`}
+                  >
+                    <div className="font-medium">💰 Payment Setup</div>
+                    <div className="text-xs opacity-70">
+                      {progress >= 20
+                        ? "✓ Complete"
+                        : progress >= 5
+                        ? "In Progress..."
+                        : "Pending"}
+                    </div>
+                  </div>
+
+                  <div
+                    className={`text-xs p-2 rounded border ${
+                      progress >= 50
+                        ? "bg-green-50 border-green-200 text-green-700"
+                        : progress >= 25
+                        ? "bg-blue-50 border-blue-200 text-blue-700"
+                        : "bg-muted border-muted-foreground/20"
+                    }`}
+                  >
+                    <div className="font-medium">🔗 Storage Setup</div>
+                    <div className="text-xs opacity-70">
+                      {progress >= 50
+                        ? "✓ Complete"
+                        : progress >= 25
+                        ? "In Progress..."
+                        : "Pending"}
+                    </div>
+                  </div>
+
+                  <div
+                    className={`text-xs p-2 rounded border ${
+                      progress >= 80
+                        ? "bg-green-50 border-green-200 text-green-700"
+                        : progress >= 55
+                        ? "bg-blue-50 border-blue-200 text-blue-700"
+                        : "bg-muted border-muted-foreground/20"
+                    }`}
+                  >
+                    <div className="font-medium">📁 File Upload</div>
+                    <div className="text-xs opacity-70">
+                      {progress >= 80
+                        ? "✓ Complete"
+                        : progress >= 55
+                        ? "In Progress..."
+                        : "Pending"}
+                    </div>
+                  </div>
+
+                  <div
+                    className={`text-xs p-2 rounded border ${
+                      progress >= 100
+                        ? "bg-green-50 border-green-200 text-green-700"
+                        : progress >= 85
+                        ? "bg-blue-50 border-blue-200 text-blue-700"
+                        : "bg-muted border-muted-foreground/20"
+                    }`}
+                  >
+                    <div className="font-medium">✅ Confirmation</div>
+                    <div className="text-xs opacity-70">
+                      {progress >= 100
+                        ? "✓ Complete"
+                        : progress >= 85
+                        ? "In Progress..."
+                        : "Pending"}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* Status Message */}
+            {/* Enhanced Status Message */}
             {status && (
               <Alert
                 className={`${
@@ -192,81 +299,162 @@ const FileUploadForm = () => {
                     : "border-blue-200 bg-blue-50 dark:bg-blue-950/30"
                 }`}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   {progress === 100 ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
                   ) : (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-b-transparent" />
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-b-transparent flex-shrink-0" />
                   )}
-                  <AlertDescription
-                    className={`${
-                      progress === 100
-                        ? "text-green-800 dark:text-green-300"
-                        : "text-blue-800 dark:text-blue-300"
-                    }`}
-                  >
-                    {status}
-                  </AlertDescription>
+                  <div className="flex-1">
+                    <AlertDescription
+                      className={`font-medium ${
+                        progress === 100
+                          ? "text-green-800 dark:text-green-300"
+                          : "text-blue-800 dark:text-blue-300"
+                      }`}
+                    >
+                      {status}
+                    </AlertDescription>
+                    {progress < 100 && progress > 0 && (
+                      <div className="text-xs opacity-70 mt-1">
+                        This may take a few minutes depending on file size and
+                        network conditions.
+                      </div>
+                    )}
+                  </div>
                 </div>
               </Alert>
             )}
 
-            {/* Upload Details */}
+            {/* Enhanced Upload Details */}
             {uploadedInfo && (
-              <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                <h3 className="font-semibold text-sm flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  Upload Details
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-lg p-5 space-y-4 border border-green-200 dark:border-green-800">
+                <h3 className="font-semibold text-base flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  Upload Successful!
                 </h3>
-                <div className="grid gap-2 text-sm">
+
+                <div className="grid gap-3 text-sm">
                   {uploadedInfo.fileName && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">File:</span>
-                      <span className="font-medium">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground font-medium">
+                        File Name:
+                      </span>
+                      <span
+                        className="font-semibold text-right max-w-48 truncate"
+                        title={uploadedInfo.fileName}
+                      >
                         {uploadedInfo.fileName}
                       </span>
                     </div>
                   )}
+
                   {uploadedInfo.fileSize && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Size:</span>
-                      <span className="font-medium">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground font-medium">
+                        File Size:
+                      </span>
+                      <span className="font-semibold">
                         {(uploadedInfo.fileSize / (1024 * 1024)).toFixed(2)} MB
                       </span>
                     </div>
                   )}
-                  {uploadedInfo.pieceCid && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Piece CID:</span>
-                      <Badge
-                        variant="outline"
-                        className="font-mono text-xs max-w-32 truncate"
-                      >
-                        {uploadedInfo.pieceCid}
+
+                  {uploadedInfo.dataSetId && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground font-medium">
+                        Dataset ID:
+                      </span>
+                      <Badge variant="secondary" className="font-mono">
+                        #{uploadedInfo.dataSetId}
                       </Badge>
                     </div>
                   )}
-                  {uploadedInfo.txHash && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Transaction:
+
+                  {uploadedInfo.pieceId !== undefined && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground font-medium">
+                        Piece ID:
+                      </span>
+                      <Badge variant="secondary" className="font-mono">
+                        #{uploadedInfo.pieceId}
+                      </Badge>
+                    </div>
+                  )}
+
+                  {uploadedInfo.providerAddress && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground font-medium">
+                        Storage Provider:
                       </span>
                       <Badge
                         variant="outline"
                         className="font-mono text-xs max-w-32 truncate"
+                        title={uploadedInfo.providerAddress}
                       >
-                        {uploadedInfo.txHash}
+                        {uploadedInfo.providerAddress.slice(0, 6)}...
+                        {uploadedInfo.providerAddress.slice(-4)}
+                      </Badge>
+                    </div>
+                  )}
+
+                  {uploadedInfo.pieceCid && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground font-medium">
+                        Piece CID:
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="font-mono text-xs max-w-40 truncate cursor-pointer hover:bg-accent"
+                        title={`Click to copy: ${uploadedInfo.pieceCid}`}
+                        onClick={() => {
+                          navigator.clipboard.writeText(
+                            uploadedInfo.pieceCid || ""
+                          );
+                          toast.success("Piece CID copied to clipboard!");
+                        }}
+                      >
+                        {uploadedInfo.pieceCid.slice(0, 8)}...
+                        {uploadedInfo.pieceCid.slice(-8)}
+                      </Badge>
+                    </div>
+                  )}
+
+                  {uploadedInfo.txHash && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground font-medium">
+                        Transaction Hash:
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="font-mono text-xs max-w-32 truncate cursor-pointer hover:bg-accent"
+                        title={`Click to copy: ${uploadedInfo.txHash}`}
+                        onClick={() => {
+                          navigator.clipboard.writeText(
+                            uploadedInfo.txHash || ""
+                          );
+                          toast.success(
+                            "Transaction hash copied to clipboard!"
+                          );
+                        }}
+                      >
+                        {uploadedInfo.txHash.slice(0, 6)}...
+                        {uploadedInfo.txHash.slice(-6)}
                       </Badge>
                     </div>
                   )}
                 </div>
+
                 {progress === 100 && (
-                  <div className="pt-2 border-t">
+                  <div className="pt-3 border-t border-green-200 dark:border-green-800 flex justify-between items-center">
+                    <div className="text-xs text-green-700 dark:text-green-300">
+                      🎉 Your file is now stored permanently on Filecoin!
+                    </div>
                     <button
                       onClick={handleReset}
-                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-white/50 dark:hover:bg-black/20"
                     >
-                      Clear upload details
+                      Clear details
                     </button>
                   </div>
                 )}
