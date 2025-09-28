@@ -25,8 +25,9 @@ import { useState } from "react";
 // Navigation items for consistency
 const navigationItems = [
   { href: "/storage", label: "Storage" },
+  { href: "/streaming", label: "Streaming" },
+  { href: "/explore", label: "Explore" },
   { href: "/creators", label: "Creators" },
-  { href: "/explore", label: "explore" },
   { href: "/community", label: "Community" },
 ];
 

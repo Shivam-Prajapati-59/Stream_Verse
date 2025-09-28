@@ -243,10 +243,12 @@ const VideoGallery: React.FC<VideoGalleryProps> = ({ className = "" }) => {
                   <Button
                     size="sm"
                     className="flex-1"
-                    onClick={() => window.open(getIPFSUrl(video.cid), "_blank")}
+                    onClick={() =>
+                      window.open(`/streaming?cid=${video.cid}`, "_self")
+                    }
                   >
                     <Play className="w-4 h-4 mr-2" />
-                    View on IPFS
+                    Stream & Pay
                   </Button>
                   <Button
                     variant="outline"
