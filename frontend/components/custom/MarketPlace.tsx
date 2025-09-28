@@ -17,7 +17,7 @@ import {
   Crown,
 } from "lucide-react";
 
-// NFT Card Component
+// Card Component
 interface NFTCardProps {
   title: string;
   image: string;
@@ -158,7 +158,8 @@ const Marketplace = () => {
       description: "Rare director's cuts and behind-the-scenes content",
       items: 67,
       floorPrice: "3.5",
-      image: "https://source.unsplash.com/featured/?directors,film,studio",
+      image:
+        "https://imgs.search.brave.com/FnUAnrT3k3Cgs5Kn9hId2i_AYq-J8ESYFHvxRaRGFEQ/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9jZG4u/bWFydmVsLmNvbS91/L3Byb2QvbWFydmVs/L2kvbWcvYS8yMC81/MTQ5ZWI0ODVmYmY4/L3BvcnRyYWl0X3Vu/Y2FubnkuanBn",
       badge: "Exclusive",
       icon: Crown,
       color: "text-purple-400",
@@ -168,7 +169,8 @@ const Marketplace = () => {
       description: "Studio Ghibli and top anime film collection",
       items: 124,
       floorPrice: "1.2",
-      image: "https://source.unsplash.com/featured/?anime,studio-ghibli,film",
+      image:
+        "https://imgs.search.brave.com/FnUAnrT3k3Cgs5Kn9hId2i_AYq-J8ESYFHvxRaRGFEQ/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9jZG4u/bWFydmVsLmNvbS91/L3Byb2QvbWFydmVs/L2kvbWcvYS8yMC81/MTQ5ZWI0ODVmYmY4/L3BvcnRyYWl0X3Vu/Y2FubnkuanBn",
       badge: "New",
       icon: Zap,
       color: "text-blue-400",
@@ -179,7 +181,8 @@ const Marketplace = () => {
   const trendingNFTs = [
     {
       title: "Inception: Dream Sequence",
-      image: "https://source.unsplash.com/featured/?inception,dream,film",
+      image:
+        "https://imgs.search.brave.com/_XKnrGyXiNqbvTz5ta7JetFp7hccxFrBZlSSAeZ1JnE/rs:fit:500:0:0:0/g:ce/aHR0cHM6Ly91cGxv/YWQud2lraW1lZGlh/Lm9yZy93aWtpcGVk/aWEvZW4vMi8yZS9J/bmNlcHRpb25fJTI4/MjAxMCUyOV90aGVh/dHJpY2FsX3Bvc3Rl/ci5qcGc",
       price: "4.2",
       creator: "Christopher Nolan",
       duration: "2h 28m",
@@ -189,7 +192,8 @@ const Marketplace = () => {
     },
     {
       title: "Avatar: The Way of Water",
-      image: "https://source.unsplash.com/featured/?avatar,water,film",
+      image:
+        "https://imgs.search.brave.com/FnUAnrT3k3Cgs5Kn9hId2i_AYq-J8ESYFHvxRaRGFEQ/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9jZG4u/bWFydmVsLmNvbS91/L3Byb2QvbWFydmVs/L2kvbWcvYS8yMC81/MTQ5ZWI0ODVmYmY4/L3BvcnRyYWl0X3Vu/Y2FubnkuanBn",
       price: "3.8",
       creator: "James Cameron",
       duration: "3h 12m",
@@ -199,7 +203,8 @@ const Marketplace = () => {
     },
     {
       title: "Dune: Part Two",
-      image: "https://source.unsplash.com/featured/?dune,desert,film",
+      image:
+        "https://imgs.search.brave.com/unwDz3XEapv0WhSxE4lfE7eIun2Y-vTWsnhVsGZVfwM/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL00v/TVY1Qk5XSXlObVU1/TUdZdFpEWm1OaTAw/WmpBd0xXSmxZamd0/WlRjMFpHSXhNREU0/WkdZd1hrRXlYa0Zx/Y0djQC5qcGc",
       price: "2.9",
       creator: "Denis Villeneuve",
       duration: "2h 46m",
@@ -209,7 +214,8 @@ const Marketplace = () => {
     },
     {
       title: "Spider-Verse: Multiverse",
-      image: "https://source.unsplash.com/featured/?spiderverse,animation,film",
+      image:
+        "https://imgs.search.brave.com/LOTBLb4HhiVyPtvkMpeJo9NBAhpGV767lT8JN0h0TXA/rs:fit:500:0:0:0/g:ce/aHR0cHM6Ly91cGxv/YWQud2lraW1lZGlh/Lm9yZy93aWtpcGVk/aWEvZW4vdGh1bWIv/MC8wOS9EZW1vbl9T/bGF5ZXJfLV9LaW1l/dHN1X25vX1lhaWJh/JTJDX3ZvbHVtZV8x/LmpwZy81MTJweC1E/ZW1vbl9TbGF5ZXJf/LV9LaW1ldHN1X25v/X1lhaWJhJTJDX3Zv/bHVtZV8xLmpwZw",
       price: "3.1",
       creator: "Sony Animation",
       duration: "2h 20m",
@@ -219,7 +225,8 @@ const Marketplace = () => {
     },
     {
       title: "Top Gun: Maverick",
-      image: "https://source.unsplash.com/featured/?top-gun,maverick,film",
+      image:
+        "https://imgs.search.brave.com/FnUAnrT3k3Cgs5Kn9hId2i_AYq-J8ESYFHvxRaRGFEQ/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9jZG4u/bWFydmVsLmNvbS91/L3Byb2QvbWFydmVs/L2kvbWcvYS8yMC81/MTQ5ZWI0ODVmYmY4/L3BvcnRyYWl0X3Vu/Y2FubnkuanBn",
       price: "2.7",
       creator: "Paramount Pictures",
       duration: "2h 11m",
@@ -229,7 +236,8 @@ const Marketplace = () => {
     },
     {
       title: "The Batman Chronicles",
-      image: "https://source.unsplash.com/featured/?batman,dark,film",
+      image:
+        "https://imgs.search.brave.com/FnUAnrT3k3Cgs5Kn9hId2i_AYq-J8ESYFHvxRaRGFEQ/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9jZG4u/bWFydmVsLmNvbS91/L3Byb2QvbWFydmVs/L2kvbWcvYS8yMC81/MTQ5ZWI0ODVmYmY4/L3BvcnRyYWl0X3Vu/Y2FubnkuanBn",
       price: "3.5",
       creator: "Matt Reeves",
       duration: "2h 56m",
@@ -426,7 +434,7 @@ const Marketplace = () => {
               size="lg"
               className="btn-glow text-lg px-8 py-4 hover:scale-105 transition-all duration-300"
             >
-              Explore More NFTs
+              Explore More Content
             </Button>
           </div>
         </div>
@@ -444,7 +452,7 @@ const Marketplace = () => {
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Join thousands of creators and collectors in the world's leading
-              movie NFT marketplace
+              movie marketplace
             </p>
           </div>
 
