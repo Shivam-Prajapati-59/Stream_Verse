@@ -1,6 +1,8 @@
 import { useState, useCallback } from "react";
-import { useAccount, useWalletClient } from "wagmi";
 import { wrapFetchWithPayment, decodeXPaymentResponse } from "x402-fetch";
+import { createWalletClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { polygonAmoy } from "viem/chains";
 
 interface X402PaymentOptions {
   facilitatorUrl?: string;
@@ -17,8 +19,6 @@ interface PaymentResult {
 export const useX402Payment = (options: X402PaymentOptions = {}) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { isConnected } = useAccount();
-  const { data: walletClient } = useWalletClient();
 
   const facilitatorUrl =
     options.facilitatorUrl || "https://x402.polygon.technology";
@@ -28,21 +28,36 @@ export const useX402Payment = (options: X402PaymentOptions = {}) => {
       url: string,
       requestOptions: RequestInit = {}
     ): Promise<PaymentResult> => {
-      if (!isConnected || !walletClient) {
-        return { success: false, error: "Wallet not connected" };
-      }
-
       setIsLoading(true);
       setError(null);
 
       try {
-        console.log(`🔄 Making request to X402-enabled server: ${url}`);
-        console.log(`💡 Server will handle X402 payment processing`);
-        console.log(`👛 Wallet address: ${walletClient?.account?.address}`);
+        console.log(`🔄 Making X402 payment request to: ${url}`);
+        console.log(`💡 Using facilitator: ${facilitatorUrl}`);
 
-        // Make regular request to our X402-enabled server (like calling seller.js endpoint)
-        // The server-side x402-express middleware will handle all payment processing
-        const response = await fetch(url, {
+        // Use private key from environment (same as buyer.js)
+        const privateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY;
+        if (!privateKey) {
+          throw new Error("NEXT_PUBLIC_PRIVATE_KEY not set in environment");
+        }
+
+        // Create wallet client like buyer.js
+        const account = privateKeyToAccount(`0x${privateKey}`);
+        const client = createWalletClient({
+          account,
+          chain: polygonAmoy,
+          transport: http(),
+        });
+
+        console.log(`👛 Using wallet address: ${account.address}`);
+
+        // Create X402-enabled fetch (exact same as buyer.js)
+        const fetchWithPayment = (wrapFetchWithPayment as any)(fetch, client, {
+          facilitatorUrl: facilitatorUrl,
+        });
+
+        // Make X402 payment request (same as buyer.js)
+        const response = await fetchWithPayment(url, {
           method: "GET",
           headers: {
             Accept: "application/octet-stream",
@@ -153,7 +168,7 @@ export const useX402Payment = (options: X402PaymentOptions = {}) => {
         return { success: false, error: errorMessage };
       }
     },
-    [isConnected, facilitatorUrl]
+    [facilitatorUrl]
   );
 
   return {
