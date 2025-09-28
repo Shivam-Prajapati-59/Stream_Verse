@@ -1,12 +1,17 @@
 # StreamVerse 🎬
 
-**Decentralized Video Streaming with X402 Micropayments**
+\*\*Dece### Upload Process
+
+1. Upload video via web interface
+2. Store on Filecoin via Synapse SDK (gets CID)
+3. Prepare for second-based streaming
+4. Save metadata to PostgreSQLzed Video Streaming with X402 Micropayments\*\*
 
 Pay-per-chunk video streaming platform using X402 payment protocol on Polygon Amoy testnet with Filecoin storage.
 
 ## ✨ Key Features
 
-- **Pay-per-Chunk**: Users pay $0.001 USDC only for video chunks they watch
+- **Pay-per-Stream**: Users pay $0.001 USDC only for video segement they watch
 - **X402 Protocol**: HTTP 402 status code enables seamless web micropayments
 - **Filecoin Storage**: Videos stored on decentralized Filecoin network via Synapse SDK
 - **Polygon Payments**: Fast, cheap USDC payments on Polygon Amoy testnet
@@ -26,26 +31,26 @@ Pay-per-chunk video streaming platform using X402 payment protocol on Polygon Am
 
 1. Upload video via web interface
 2. Store on Filecoin via Synapse SDK (gets CID)
-3. Split into 12 chunks for streaming
+3. Split into 10 sec chunks for streaming
 4. Save metadata to PostgreSQL
 
 ### Streaming Process
 
 1. User selects video from marketplace
 2. Connect wallet (RainbowKit + Wagmi)
-3. Request video chunk → Server returns HTTP 402
+3. Request video segment → Server returns HTTP 402
 4. Pay $0.001 USDC on Polygon Amoy → Get transaction hash
-5. Retry request with payment proof → Receive video chunk
-6. Repeat for each chunk as video plays
+5. Retry request with payment proof → Receive video segment
+6. Stream plays progressively as user pays for viewing time
 
 ### X402 Payment Flow
 
 ```http
-GET /api/stream/chunk/0
+GET /api/stream/segment/0
 → 402 Payment Required {"amount": "0.001", "currency": "USDC"}
 → User pays via wallet
-→ GET /api/stream/chunk/0 + X-Payment-Token: 0x123...
-→ 200 OK + video chunk data
+→ GET /api/stream/segment/0 + X-Payment-Token: 0x123...
+→ 200 OK + video segment data
 ```
 
 ## � Setup
@@ -95,7 +100,6 @@ NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=your_project_id
 
 ```env
 DATABASE_URL=postgresql://user:pass@localhost:5432/streamverse_db
-SYNAPSE_API_KEY=your_key
 PRIVATE_KEY=your_private_key
 ```
 
@@ -110,8 +114,8 @@ PRIVATE_KEY=your_private_key
 
 A complete decentralized video streaming platform that combines:
 
-- **Filecoin storage** for permanent video hosting
-- **X402 micropayments** for pay-per-chunk streaming
+- **Filecoin synapse storage** for permanent video hosting
+- **X402 micropayments** for pay-per-stream content
 - **Polygon Amoy** for fast, cheap blockchain transactions
 - **Web3 wallet integration** for seamless user experience
 
